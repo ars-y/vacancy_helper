@@ -1,6 +1,7 @@
 import os
+import shelve
 
-from settings.globconf import DB_DIR
+from settings.globconf import DB_DIR, DB_NAME
 
 
 def check_db_is_exist(db_path: str) -> bool:
@@ -9,6 +10,12 @@ def check_db_is_exist(db_path: str) -> bool:
 
 
 def create_db() -> None:
-    """Создание БД."""
-    if not check_db_is_exist(DB_DIR):
-        os.mkdir(DB_DIR)
+    """Создание каталога с БД."""
+    db_path = DB_DIR
+    filename: str = DB_NAME
+
+    if not check_db_is_exist(db_path):
+        os.mkdir(db_path)
+
+    with shelve.open(filename):
+        pass
