@@ -1,7 +1,10 @@
+import requests
+import shelve
+
 from processors import process_text
 
 
-class Vacancy:
+class VacancyHH:
     """Модель объекта вакансии."""
 
     def __init__(self, item: dict) -> None:
@@ -91,3 +94,20 @@ class Vacancy:
         )
 
         return summary_description
+
+
+class VacancyHHCollector:
+    """
+    Запускает сбор вакансий, который в дальнейшем сериализует
+    и сохраняет в базу данных.
+    """
+
+    def __init__(self, url: str, params: dict) -> None:
+        self._url = url
+        self._params = params
+
+    def __create_db(self):
+        """Создает БД, если она не существует."""
+    
+    def run(self):
+        """Запускает сбор вакансий."""
