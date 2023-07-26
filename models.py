@@ -1,7 +1,9 @@
 import requests
 import shelve
 
+from db import create_db
 from processors import process_text
+from settings.globconf import DB_NAME
 
 
 class VacancyHH:
@@ -105,9 +107,12 @@ class VacancyHHCollector:
     def __init__(self, url: str, params: dict) -> None:
         self._url = url
         self._params = params
+        self._db_name: str = DB_NAME
 
     def __create_db(self):
         """Создает БД, если она не существует."""
+        create_db()
     
     def run(self):
         """Запускает сбор вакансий."""
+        self.__create_db()
