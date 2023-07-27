@@ -9,20 +9,16 @@ def remove_tags_from_text(string: str) -> list:
     return re.sub(TAG_PATTERN, '', string)
 
 
-def add_marks(strings: list) -> None:
-    """
-    Добавляет символы '-' перед каждой строкой,
-    ';' в конце каждой строки, кроме последней.
-    Последняя строка получает '.'
-    
-    Input: ['s0', 's1', 's2']
-    Output: ['-s0;', '-s1;', '-s2.']    
-    """
-    n: int = len(strings)
+def add_carry(strings: list) -> None:
+    for i in range(len(strings) - 1):
+        if ':' in strings[i] or ';' in strings[i]:
+            strings[i] += '\n-'
+        elif '.' in strings[i]:
+            strings[i] += '\n\n'
 
-    for i in range(n):
-        strings[i] = '- ' + strings[i]
-        strings[i] += ';' if i < n - 1 else '.'
+
+def remove_empty_elements(strings: list) -> list:
+    return [string for string in strings if string != '']
 
 
 def process_text(strings: str) -> str:
@@ -33,12 +29,14 @@ def process_text(strings: str) -> str:
     if not strings:
         return
 
-    strings: list = strings.split('. ')
-    add_marks(strings)
+    strings: list = strings.split()
 
     for i in range(len(strings)):
         _match = re.search(TAG_PATTERN, strings[i])
         if _match:
             strings[i] = remove_tags_from_text(strings[i])
-    
-    return '\n'.join(strings)
+
+    strings: list = remove_empty_elements(strings)
+    add_carry(strings)
+
+    return ' '.join(strings)
