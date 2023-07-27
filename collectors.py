@@ -21,14 +21,33 @@ class BaseVacancyCollector:
         self._filters = filters
 
         self._db_file: str | None = None
+        self._max_age: int | None = None
         self._prepare_collector()
 
     def _prepare_collector(self) -> None:
+        """
+        Creating database for vacancies.
+        Set values for collector attribute.
+        """
         if not self._db_is_exists():
             self._create_db()
+        
+        attribute_setters: tuple = (
+            '_set_db_filename',
+            '_set_max_age',
+        )
+
+        for attr_name in attribute_setters:
+            setter = getattr(self, attr_name)
+            setter()
 
     def _set_db_filename(self) -> None:
+        """Set database file name."""
         self._db_file = db.get_db_filename()
+    
+    def _set_max_age(self) -> None:
+        """Set storage time limit for vacancy id."""
+        self._max_age = db.get_expired_time()
 
     def _create_db(self) -> None:
         """Creating DB."""
@@ -67,7 +86,30 @@ class BaseVacancyCollector:
         with shelve.open(self._db_file) as vdb:
             for vid in vacancies_id:
                 if vid not in vdb:
-                    vdb[vid] = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    current_time = dt.datetime.now()
+                    vdb[vid] = dt.datetime.timestamp(current_time)
+    
+    def load(self) -> set:
+        """Loading set of vacancies id. Remove id if expired."""
+        vacancies_id: set = {}
+        max_age: int = 7
+        time_delta = dt.timedelta(max_age)
+        expired_ids: list = []
+
+        with shelve.open(self._db_file) as vdb:
+            vacancies_id = set(vdb.keys())
+
+            for vid in vdb:
+                pub_date = dt.datetime.fromtimestamp(vdb[vid])
+                current_date = dt.datetime.now()
+                if pub_date + time_delta < current_date:
+                    expired_ids.append(vid)
+
+            if expired_ids:
+                for vid in expired_ids:
+                    vdb.pop(vid)
+
+        return vacancies_id
 
 
 class VacancyHHCollector(BaseVacancyCollector):
@@ -109,3 +151,4 @@ class VacancyHHCollector(BaseVacancyCollector):
         """Start collecting vacancies."""
         request_url: str = self.make_request_url_with_params()
         vacancies_id: list = self.get_vacancies_id_list(request_url)
+        pass
