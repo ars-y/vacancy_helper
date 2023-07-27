@@ -1,13 +1,8 @@
-import requests
-import shelve
-
-from db import create_db
 from processors import process_text
-from settings.globconf import DB_NAME
 
 
 class VacancyHH:
-    """Model for summary vacancy info."""
+    """Model for summary hh vacancy info."""
 
     def __init__(self, item: dict) -> None:
         self._vacancy: dict = item
@@ -86,27 +81,3 @@ class VacancyHH:
         )
 
         return summary_description
-
-
-class VacancyHHCollector:
-    """
-    Model collecting vacancies, select by filters
-    and returns a list of VacancyHH objects
-    """
-
-    def __init__(self, url: str, params: dict) -> None:
-        self._url = url
-        self._params = params
-        self._db_name: str = DB_NAME
-
-    def _create_db(self):
-        """Create DB."""
-        create_db()
-
-    def _db_is_exists(self) -> bool:
-        """Check for db is already exist."""
-
-    def run(self):
-        """Start collecting vacancies."""
-        if not self._db_is_exists():
-            self._create_db()
