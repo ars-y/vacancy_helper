@@ -7,17 +7,17 @@ from settings.globconf import DB_NAME
 
 
 class VacancyHH:
-    """Модель объекта вакансии."""
+    """Model for summary vacancy info."""
 
     def __init__(self, item: dict) -> None:
         self._vacancy: dict = item
         if not self._vacancy:
             raise ValueError
 
+        self._vacancy_id: int | None = None
         self._name: str | None = None
         self._employer: str | None = None
-        self._requirement: str | None = None
-        self._responsibility: str | None = None
+        self._description: str | None = None
         self._employment: str | None = None
         self._experience: str | None = None
 
@@ -36,12 +36,13 @@ class VacancyHH:
             return
 
         self._employer = employer_info.get('name', None)
-    
-    def _set_requirement(self) -> None:
-        self._requirement, _ = self.__description()
 
-    def _set_responsibility(self) -> None:
-        _, self._responsibility = self.__description()
+    def _set_description(self) -> tuple:
+        description: dict = self._vacancy.get('description', None)
+        if not description:
+            return
+        
+        self._description = process_text(description)
     
     def _set_employment(self) -> None:
         employment: dict = self._vacancy.get('employment', None)
@@ -66,8 +67,7 @@ class VacancyHH:
         attribute_setters: tuple = (
             '_set_name',
             '_set_employer',
-            '_set_requirement',
-            '_set_responsibility',
+            '_set_description',
             '_set_employment',
             '_set_experience',
         )
@@ -76,22 +76,12 @@ class VacancyHH:
             setter = getattr(self, attr_name)
             setter()
 
-    def __description(self) -> tuple:
-        snippet: dict = self._vacancy.get('snippet', None)
-        if not snippet:
-            return None, None
-        
-        requirements: str = process_text(snippet.get('requirement', None))
-        responsibilities: str = process_text(snippet.get('responsibility', None))
-        return requirements, responsibilities
-
     def __str__(self) -> str:
         summary_description: str = (
             f'{self._name}\n'
             f'{self._employment}\n'
             f'Компания: {self._employer}\n\n'
-            f'Требования:\n{self._requirement}\n\n'
-            f'Задачи:\n{self._responsibility}\n\n'
+            f'Описание:\n{self._description}\n\n'
             f'Вакансия: {self._vacancy_url}'
         )
 
@@ -100,8 +90,8 @@ class VacancyHH:
 
 class VacancyHHCollector:
     """
-    Запускает сбор вакансий, который в дальнейшем сериализует
-    и сохраняет в базу данных.
+    Model collecting vacancies, select by filters
+    and returns a list of VacancyHH objects
     """
 
     def __init__(self, url: str, params: dict) -> None:
@@ -109,10 +99,14 @@ class VacancyHHCollector:
         self._params = params
         self._db_name: str = DB_NAME
 
-    def __create_db(self):
-        """Создает БД, если она не существует."""
+    def _create_db(self):
+        """Create DB."""
         create_db()
-    
+
+    def _db_is_exists(self) -> bool:
+        """Check for db is already exist."""
+
     def run(self):
-        """Запускает сбор вакансий."""
-        self.__create_db()
+        """Start collecting vacancies."""
+        if not self._db_is_exists():
+            self._create_db()
