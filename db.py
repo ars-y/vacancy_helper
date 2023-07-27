@@ -1,7 +1,7 @@
 import os
 import shelve
 
-from settings.globconf import DB_DIR, DB_NAME
+from settings.globconf import DB_DIR, DB_NAME, MAX_AGE
 
 
 def dir_is_exists(db_path: str) -> bool:
@@ -29,3 +29,7 @@ def create_db() -> None:
 def get_db_filename() -> str:
     """Return db filename"""
     return DB_NAME
+
+def get_expired_time() -> int:
+    """Return expired time for id"""
+    return MAX_AGE
