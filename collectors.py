@@ -1,3 +1,4 @@
+import datetime as dt
 import requests
 import shelve
 
@@ -60,6 +61,13 @@ class BaseVacancyCollector:
         ]
 
         return request_url + '&'.join(params_string)
+
+    def save(self, vacancies_id: list) -> None:
+        """Save vacancy id in db with timestamp."""
+        with shelve.open(self._db_file) as vdb:
+            for vid in vacancies_id:
+                if vid not in vdb:
+                    vdb[vid] = dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
 class VacancyHHCollector(BaseVacancyCollector):
