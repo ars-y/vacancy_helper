@@ -1,3 +1,5 @@
+import aiohttp
+import asyncio
 import datetime as dt
 import requests
 import shelve
@@ -15,7 +17,7 @@ class BaseVacancyCollector:
         url: str,
         endpoint: str | None = None,
         params: dict | None = None,
-        filters: list | None = None
+        filters: set | None = None
     ) -> None:
         if not is_correct_url(url):
             raise URLValueException(url)
@@ -125,31 +127,74 @@ class VacancyHHCollector(BaseVacancyCollector):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+    async def _make_request(
+        self,
+        session: aiohttp.ClientSession,
+        url: str
+    ) -> list:
+        """
+        Making async request with session and url.
+        Rerutn decodes JSON response.
+        """
+        async with session.get(url) as response:
+            return await response.json()
+
+    async def _async_get_response_data(self, urls: list) -> list:
+        """Creating session to make async requests and gather response data."""
+        async with aiohttp.ClientSession() as session:
+            coros: list = [
+                self._make_request(session, url)
+                for url in urls
+            ]
+
+            return await asyncio.gather(*coros)
+
     def get_vacancies_id_list(self, url: str) -> list:
         """
         Collecting vacancies id in list
         from all vacancies with specified parameters.
+        If response contains more than one page,
+        then make async requests for remaining pages.
         """
         response: requests.Response = requests.get(url)
         data = response.json()
 
-        vacancies_id: list = []
+        items: list = self._drain_response_data(data.get('items'))
+        vacancies_id: list = [item.get('id') for item in items]
 
         current_page: int = data.get('page', 0)
         total_pages: int = data.get('pages', 0)
 
-        while current_page <= total_pages:
-            items: list = data.get('items')
-            for item in items:
-                vacancy_id: str = item.get('id')
-                vacancies_id.append(vacancy_id)
+        if total_pages > current_page:
+            urls: list = [
+                url + '&page=%d' % page_num
+                for page_num in range(1, total_pages)
+            ]
 
-            current_page += 1
-            url += '&page=%d' % current_page
-            response = requests.get(url)
-            data = response.json()
+            dataset: list = asyncio.run(self._async_get_response_data(urls))
+
+            for data in dataset:
+                if 'items' in data:
+                    items: list = self._drain_response_data(data.get('items'))
+                    vacancies_id += [item.get('id') for item in items]
 
         return vacancies_id
+
+    def _drain_response_data(self, items: list) -> list:
+        """Filtering response data items."""
+        processed_items: list = []
+
+        for item in items:
+            experience: str = item.get('experience').get('id')
+            employment: str = item.get('employment').get('id')
+
+            if (
+                    experience not in self._filters
+                    and employment not in self._filters
+            ):
+                processed_items.append(item)
+
+        return processed_items
 
     def run(self):
         """Start collecting vacancies."""
