@@ -88,6 +88,13 @@ class BaseVacancyCollector:
 
         return request_url + '&'.join(params_string)
 
+    def _sift_vacancies(self, vacancies_id: list) -> list:
+        """Sift vacancies to leave new ones. New vacancies save in database."""
+        old_vacancies: set = self.load()
+        new_vacancies: list = [vid for vid in vacancies_id if vid not in old_vacancies]
+        self.save(new_vacancies)
+        return new_vacancies
+
     async def _make_request(
         self,
         session: aiohttp.ClientSession,
@@ -209,4 +216,5 @@ class VacancyHHCollector(BaseVacancyCollector):
         """Start collecting vacancies."""
         request_url: str = self.make_request_url_with_params()
         vacancies_id: list = self.get_vacancies_id_list(request_url)
+        vacancies_id = self._sift_vacancies(vacancies_id)
         pass
