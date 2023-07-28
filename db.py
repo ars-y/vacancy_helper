@@ -30,6 +30,7 @@ def get_db_filename() -> str:
     """Return db filename"""
     return DB_NAME
 
+
 def get_expired_time() -> int:
     """Return expired time for id"""
     return MAX_AGE
