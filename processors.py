@@ -5,11 +5,15 @@ TAG_PATTERN: re.Pattern = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1
 
 
 def remove_tags_from_text(string: str) -> list:
-    """Принимает список строк, в которых убирает html теги."""
+    """Remove html tags from string."""
     return re.sub(TAG_PATTERN, '', string)
 
 
 def add_carry(strings: list) -> None:
+    """
+    Replace ':' and ';' with hypen bullet.
+    Add extra carry after dot.
+    """
     for i in range(len(strings) - 1):
         if ':' in strings[i] or ';' in strings[i]:
             strings[i] += '\n-'
@@ -23,8 +27,8 @@ def remove_empty_elements(strings: list) -> list:
 
 def process_text(strings: str) -> str:
     """
-    Текст разбивается на строки с добавочными списковыми символами,
-    убираются все html теги, если они присутствуют.
+    Cleaning html tags from input strings if exists.
+    Additing bullet and carry characters.
     """
     if not strings:
         return
@@ -40,3 +44,9 @@ def process_text(strings: str) -> str:
     add_carry(strings)
 
     return ' '.join(strings)
+
+
+def is_correct_url(url: str) -> bool:
+    """Check url is correct."""
+    url_patter = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
+    return re.match(url_patter, url) is not None
