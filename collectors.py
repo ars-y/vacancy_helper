@@ -3,6 +3,8 @@ import requests
 import shelve
 
 import db
+from exceptions import URLValueException
+from processors import is_correct_url
 
 
 class BaseVacancyCollector:
@@ -15,6 +17,9 @@ class BaseVacancyCollector:
         params: dict | None = None,
         filters: list | None = None
     ) -> None:
+        if not is_correct_url(url):
+            raise URLValueException(url)
+
         self._url = url
         self._endpoint = endpoint
         self._params = params
@@ -31,7 +36,7 @@ class BaseVacancyCollector:
         """
         if not self._db_is_exists():
             self._create_db()
-        
+
         attribute_setters: tuple = (
             '_set_db_filename',
             '_set_max_age',
@@ -44,7 +49,7 @@ class BaseVacancyCollector:
     def _set_db_filename(self) -> None:
         """Set database file name."""
         self._db_file = db.get_db_filename()
-    
+
     def _set_max_age(self) -> None:
         """Set storage time limit for vacancy id."""
         self._max_age = db.get_expired_time()
@@ -88,12 +93,11 @@ class BaseVacancyCollector:
                 if vid not in vdb:
                     current_time = dt.datetime.now()
                     vdb[vid] = dt.datetime.timestamp(current_time)
-    
+
     def load(self) -> set:
         """Loading set of vacancies id. Remove id if expired."""
         vacancies_id: set = {}
-        max_age: int = 7
-        time_delta = dt.timedelta(max_age)
+        time_delta = dt.timedelta(self._max_age)
         expired_ids: list = []
 
         with shelve.open(self._db_file) as vdb:
@@ -139,7 +143,7 @@ class VacancyHHCollector(BaseVacancyCollector):
             for item in items:
                 vacancy_id: str = item.get('id')
                 vacancies_id.append(vacancy_id)
-            
+
             current_page += 1
             url += '&page=%d' % current_page
             response = requests.get(url)
