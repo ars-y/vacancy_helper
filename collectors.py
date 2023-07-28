@@ -88,6 +88,28 @@ class BaseVacancyCollector:
 
         return request_url + '&'.join(params_string)
 
+    async def _make_request(
+        self,
+        session: aiohttp.ClientSession,
+        url: str
+    ) -> list:
+        """
+        Making async request with session and url.
+        Rerutn decodes JSON response.
+        """
+        async with session.get(url) as response:
+            return await response.json()
+
+    async def _async_get_response_data(self, urls: list) -> list:
+        """Creating session to make async requests and gather response data."""
+        async with aiohttp.ClientSession() as session:
+            coros: list = [
+                self._make_request(session, url)
+                for url in urls
+            ]
+
+            return await asyncio.gather(*coros)
+
     def save(self, vacancies_id: list) -> None:
         """Save vacancy id in db with timestamp."""
         with shelve.open(self._db_file) as vdb:
@@ -126,28 +148,6 @@ class VacancyHHCollector(BaseVacancyCollector):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-
-    async def _make_request(
-        self,
-        session: aiohttp.ClientSession,
-        url: str
-    ) -> list:
-        """
-        Making async request with session and url.
-        Rerutn decodes JSON response.
-        """
-        async with session.get(url) as response:
-            return await response.json()
-
-    async def _async_get_response_data(self, urls: list) -> list:
-        """Creating session to make async requests and gather response data."""
-        async with aiohttp.ClientSession() as session:
-            coros: list = [
-                self._make_request(session, url)
-                for url in urls
-            ]
-
-            return await asyncio.gather(*coros)
 
     def get_vacancies_id_list(self, url: str) -> list:
         """
