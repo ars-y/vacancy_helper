@@ -166,17 +166,26 @@ class VacancyHHCollector(BaseVacancyCollector):
         total_pages: int = data.get('pages', 0)
 
         if total_pages > current_page:
-            urls: list = [
-                url + '&page=%d' % page_num
-                for page_num in range(1, total_pages)
-            ]
+            vacancies_id.extend(
+                self._extract_rest_vacancies(url, total_pages)
+            )
 
-            dataset: list = asyncio.run(self._async_get_response_data(urls))
+        return vacancies_id
 
-            for data in dataset:
-                if 'items' in data:
-                    items: list = self._drain_response_data(data.get('items'))
-                    vacancies_id += [item.get('id') for item in items]
+    def _extract_rest_vacancies(self, url: str, total_pages: int) -> list:
+        """Extract vacancies id from rest pages."""
+        vacancies_id: list = []
+        urls: list = [
+            url + '&page=%d' % page_num
+            for page_num in range(1, total_pages)
+        ]
+
+        dataset: list = asyncio.run(self._async_get_response_data(urls))
+
+        for data in dataset:
+            if 'items' in data:
+                items: list = self._drain_response_data(data.get('items'))
+                vacancies_id += [item.get('id') for item in items]
 
         return vacancies_id
 
