@@ -189,10 +189,13 @@ class VacancyHHCollector(BaseVacancyCollector):
         current_page: int = data.get('page', 0)
         total_pages: int = data.get('pages', 0)
 
-        if total_pages > current_page:
-            vacancies_id.extend(
-                self._extract_rest_vacancies(url, total_pages)
-            )
+        if current_page < total_pages:
+            with EventLoopContextManager() as loop:
+                result = loop.run_until_complete(
+                    self._extract_rest_vacancies(url, total_pages)
+                )
+                vacancies_id.extend(result)
+                loop.run_until_complete(asyncio.sleep(0.01))
 
         return vacancies_id
 
