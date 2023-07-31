@@ -6,6 +6,7 @@ import shelve
 
 import db
 from exceptions import URLValueException
+from managers import EventLimiter, EventLoopContextManager
 from models import VacancyHH
 from processors import is_correct_url
 
@@ -107,18 +108,21 @@ class BaseVacancyCollector:
         ]
         self.save(new_vacancies)
         return new_vacancies
+    
+    async def _try_make_request(self, limiter: EventLimiter, url: str):
+        """Waiting release for next request."""
+        while True:
+            await limiter.wait()
+            return await self._make_request(url)
 
-    async def _make_request(
-        self,
-        session: aiohttp.ClientSession,
-        url: str
-    ) -> list:
+    async def _make_request(self, url: str) -> list:
         """
         Making async request with session and url.
         Rerutn decodes JSON response.
         """
-        async with session.get(url) as response:
-            return await response.json()
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.json()
 
     async def _async_get_response_data(self, urls: list) -> list:
         """Creating session to make async requests and gather response data."""
