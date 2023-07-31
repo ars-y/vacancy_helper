@@ -15,3 +15,20 @@ class EventLoopContextManager(asyncio.AbstractEventLoop):
 
     def __exit__(self, *exc_info):
         self._loop.close()
+
+
+class EventLimiter:
+    """Limit event with delay."""
+
+    def __init__(self, delay: int | float) -> None:
+        self._delay = delay
+        self._event: asyncio.Event = asyncio.Event()
+
+        self._event.set()
+
+    async def wait(self):
+        while not self._event.is_set():
+            await self._event.wait()
+
+        self._event.clear()
+        asyncio.get_event_loop().call_later(self._delay, self._event.set)
