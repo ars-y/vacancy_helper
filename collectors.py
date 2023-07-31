@@ -5,6 +5,7 @@ import requests
 import shelve
 
 import db
+import settings
 from exceptions import URLValueException
 from managers import EventLimiter, EventLoopContextManager
 from models import VacancyHH
@@ -69,6 +70,45 @@ class BaseVacancyCollector:
 
         return db.file_is_exists(self._db_file)
 
+    def _sift_vacancies(self, vacancies_id: list) -> list:
+        """Sift vacancies to leave new ones. New vacancies save in database."""
+        old_vacancies: set = self.load()
+        new_vacancies: list = [
+            vid for vid in vacancies_id if vid not in old_vacancies
+        ]
+        self.save(new_vacancies)
+        return new_vacancies
+
+    async def _async_get_response_data(self, urls: list, delay: float | int) -> list:
+        """Create tasks for requests and wait it to complete."""
+        limiter: EventLimiter = EventLimiter(delay)
+        tasks: list = [
+            asyncio.ensure_future(self._try_make_request(limiter, url))
+            for url in urls
+        ]
+        pending: set = set(tasks)
+        while pending:
+            done, pending = await asyncio.wait(
+                pending, return_when=asyncio.FIRST_EXCEPTION
+            )
+
+        return [task.result() for task in done]
+
+    async def _make_request(self, url: str) -> list:
+        """
+        Making async request with session and url.
+        Rerutn decodes JSON response.
+        """
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                return await response.json()
+
+    async def _try_make_request(self, limiter: EventLimiter, url: str):
+        """Waiting release for next request."""
+        while True:
+            await limiter.wait()
+            return await self._make_request(url)
+
     def make_request_url_with_params(
         self,
         endpoint: str = None,
@@ -99,40 +139,6 @@ class BaseVacancyCollector:
         ]
 
         return request_url + '&'.join(params_string)
-
-    def _sift_vacancies(self, vacancies_id: list) -> list:
-        """Sift vacancies to leave new ones. New vacancies save in database."""
-        old_vacancies: set = self.load()
-        new_vacancies: list = [
-            vid for vid in vacancies_id if vid not in old_vacancies
-        ]
-        self.save(new_vacancies)
-        return new_vacancies
-    
-    async def _try_make_request(self, limiter: EventLimiter, url: str):
-        """Waiting release for next request."""
-        while True:
-            await limiter.wait()
-            return await self._make_request(url)
-
-    async def _make_request(self, url: str) -> list:
-        """
-        Making async request with session and url.
-        Rerutn decodes JSON response.
-        """
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                return await response.json()
-
-    async def _async_get_response_data(self, urls: list) -> list:
-        """Creating session to make async requests and gather response data."""
-        async with aiohttp.ClientSession() as session:
-            coros: list = [
-                self._make_request(session, url)
-                for url in urls
-            ]
-
-            return await asyncio.gather(*coros)
 
     def save(self, vacancies_id: list) -> None:
         """Save vacancy id in db with timestamp."""
@@ -173,31 +179,7 @@ class VacancyHHCollector(BaseVacancyCollector):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def get_vacancies_id_list(self, url: str) -> list:
-        """
-        Collecting vacancies id in list
-        from all vacancies with specified parameters.
-        If response contains more than one page,
-        then make async requests for remaining pages.
-        """
-        response: requests.Response = requests.get(url)
-        data = response.json()
-
-        items: list = self._drain_response_data(data.get('items'))
-        vacancies_id: list = [item.get('id') for item in items]
-
-        current_page: int = data.get('page', 0)
-        total_pages: int = data.get('pages', 0)
-
-        if current_page < total_pages:
-            with EventLoopContextManager() as loop:
-                result = loop.run_until_complete(
-                    self._extract_rest_vacancies(url, total_pages)
-                )
-                vacancies_id.extend(result)
-                loop.run_until_complete(asyncio.sleep(0.01))
-
-        return vacancies_id
+        self._delay: float | int = getattr(settings, '_hh_request_delay')
 
     def _acquire_vacancies(self, vacancies_id: list) -> list:
         """
@@ -212,9 +194,15 @@ class VacancyHHCollector(BaseVacancyCollector):
             for vid in vacancies_id
         ]
 
-        dataset: list = asyncio.run(
-            self._async_get_response_data(request_urls)
-        )
+        dataset: list = []
+        sleep_delay: float = 0.01
+
+        with EventLoopContextManager() as loop:
+            result = loop.run_until_complete(
+                self._async_get_response_data(request_urls, self._delay)
+            )
+            dataset.extend(result)
+            loop.run_until_complete(asyncio.sleep(sleep_delay))
 
         return [VacancyHH(item) for item in dataset]
 
@@ -226,7 +214,15 @@ class VacancyHHCollector(BaseVacancyCollector):
             for page_num in range(1, total_pages + 1)
         ]
 
-        dataset: list = asyncio.run(self._async_get_response_data(urls))
+        dataset: list = []
+        sleep_delay: float = 0.01
+
+        with EventLoopContextManager() as loop:
+            result = loop.run_until_complete(
+                self._async_get_response_data(urls, self._delay)
+            )
+            dataset.extend(result)
+            loop.run_until_complete(asyncio.sleep(sleep_delay))
 
         for data in dataset:
             if 'items' in data:
@@ -250,6 +246,29 @@ class VacancyHHCollector(BaseVacancyCollector):
                 processed_items.append(item)
 
         return processed_items
+
+    def get_vacancies_id_list(self, url: str) -> list:
+        """
+        Collecting vacancies id in list
+        from all vacancies with specified parameters.
+        If response contains more than one page,
+        then make async requests for remaining pages.
+        """
+        response: requests.Response = requests.get(url)
+        data = response.json()
+
+        items: list = self._drain_response_data(data.get('items'))
+        vacancies_id: list = [item.get('id') for item in items]
+
+        current_page: int = data.get('page', 0)
+        total_pages: int = data.get('pages', 0)
+
+        if current_page < total_pages:
+            vacancies_id.extend(
+                self._extract_rest_vacancies(url, total_pages)
+            )
+
+        return vacancies_id
 
     def run(self) -> list:
         """Start collecting vacancies."""
