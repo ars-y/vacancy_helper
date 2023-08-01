@@ -20,6 +20,9 @@ class VacancyHH:
         self._vacancy_url: str | None = self._get_vacancy_url()
 
         self.__fill_vacancy()
+    
+    def _set_vacancy_id(self) -> None:
+        self._vacancy_id = self._vacancy.get('id', None)
 
     def _set_name(self) -> None:
         self._name = self._vacancy.get('name', None)
@@ -61,6 +64,7 @@ class VacancyHH:
 
     def __fill_vacancy(self) -> None:
         attribute_setters: tuple = (
+            '_set_vacancy_id',
             '_set_name',
             '_set_employer',
             '_set_description',
@@ -82,3 +86,6 @@ class VacancyHH:
         )
 
         return summary_description
+
+    def __repr__(self) -> str:
+        return f'{type(self).__name__}(\'{self._vacancy_id}\')'
