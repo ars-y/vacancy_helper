@@ -3,6 +3,8 @@ import re
 
 TAG_PATTERN: re.Pattern = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
 
+URL_PATTERN: re.Pattern = re.compile(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
+
 
 def remove_tags_from_text(string: str) -> list:
     """Remove html tags from string."""
@@ -36,7 +38,7 @@ def process_text(strings: str) -> str:
     strings: list = strings.split()
 
     for i in range(len(strings)):
-        _match = re.search(TAG_PATTERN, strings[i])
+        _match: re.Match | None = re.search(TAG_PATTERN, strings[i])
         if _match:
             strings[i] = remove_tags_from_text(strings[i])
 
@@ -48,5 +50,4 @@ def process_text(strings: str) -> str:
 
 def is_correct_url(url: str) -> bool:
     """Check url is correct."""
-    url_patter = r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))"
-    return re.match(url_patter, url) is not None
+    return re.match(URL_PATTERN, url) is not None
