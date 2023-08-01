@@ -5,7 +5,6 @@ import shelve
 
 import db
 from exceptions import URLValueException
-from managers import EventLimiter
 from processors import is_correct_url
 
 
@@ -81,17 +80,15 @@ class BaseVacancyCollector:
         urls: list,
         delay: float | int
     ) -> list:
-        """Create tasks for requests and wait it to complete."""
-        limiter: EventLimiter = EventLimiter(delay)
-        tasks: list = [
-            asyncio.create_task(self._try_make_request(limiter, url))
-            for url in urls
-        ]
-        pending: set = set(tasks)
-        while pending:
-            done, pending = await asyncio.wait(pending)
+        """Create tasks with delay to make requests."""
+        tasks: list = []
+        for url in urls:
+            tasks.append(
+                asyncio.create_task(self._make_request(url))
+            )
+            await asyncio.sleep(delay)
 
-        return [task.result() for task in done]
+        return await asyncio.gather(*tasks)
 
     async def _make_request(self, url: str) -> list:
         """
@@ -101,12 +98,6 @@ class BaseVacancyCollector:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as response:
                 return await response.json()
-
-    async def _try_make_request(self, limiter: EventLimiter, url: str):
-        """Waiting release for next request."""
-        while True:
-            await limiter.wait()
-            return await self._make_request(url)
 
     def make_request_url_with_params(
         self,
