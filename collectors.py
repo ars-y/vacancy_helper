@@ -79,7 +79,11 @@ class BaseVacancyCollector:
         self.save(new_vacancies)
         return new_vacancies
 
-    async def _async_get_response_data(self, urls: list, delay: float | int) -> list:
+    async def _async_get_response_data(
+        self,
+        urls: list,
+        delay: float | int
+    ) -> list:
         """Create tasks for requests and wait it to complete."""
         limiter: EventLimiter = EventLimiter(delay)
         tasks: list = [
@@ -88,9 +92,7 @@ class BaseVacancyCollector:
         ]
         pending: set = set(tasks)
         while pending:
-            done, pending = await asyncio.wait(
-                pending, return_when=asyncio.FIRST_EXCEPTION
-            )
+            done, pending = await asyncio.wait(pending)
 
         return [task.result() for task in done]
 
@@ -181,7 +183,7 @@ class VacancyHHCollector(BaseVacancyCollector):
 
         self._delay: float | int = getattr(settings, '_hh_request_delay')
 
-    def _acquire_vacancies(self, vacancies_id: list) -> list:
+    def recieve_vacancies(self, vacancies_id: list) -> list:
         """
         Recieve Vacancy ojects.
         Method consruct requests for async get response data
@@ -195,14 +197,11 @@ class VacancyHHCollector(BaseVacancyCollector):
         ]
 
         dataset: list = []
-        sleep_delay: float = 0.01
-
         with EventLoopContextManager() as loop:
             result = loop.run_until_complete(
                 self._async_get_response_data(request_urls, self._delay)
             )
             dataset.extend(result)
-            loop.run_until_complete(asyncio.sleep(sleep_delay))
 
         return [VacancyHH(item) for item in dataset]
 
@@ -215,14 +214,11 @@ class VacancyHHCollector(BaseVacancyCollector):
         ]
 
         dataset: list = []
-        sleep_delay: float = 0.01
-
         with EventLoopContextManager() as loop:
             result = loop.run_until_complete(
                 self._async_get_response_data(urls, self._delay)
             )
             dataset.extend(result)
-            loop.run_until_complete(asyncio.sleep(sleep_delay))
 
         for data in dataset:
             if 'items' in data:
@@ -274,7 +270,7 @@ class VacancyHHCollector(BaseVacancyCollector):
         """Start collecting vacancies."""
         request_url: str = self.make_request_url_with_params()
         vacancies_id: list = self.get_vacancies_id_list(request_url)
-        vacancies: list = self._acquire_vacancies(
+        vacancies: list = self.recieve_vacancies(
             self._sift_vacancies(vacancies_id)
         )
         return vacancies
