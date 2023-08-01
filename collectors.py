@@ -210,7 +210,7 @@ class VacancyHHCollector(BaseVacancyCollector):
         vacancies_id: list = []
         urls: list = [
             url + '&page=%d' % page_num
-            for page_num in range(1, total_pages + 1)
+            for page_num in range(1, total_pages)
         ]
 
         dataset: list = []
