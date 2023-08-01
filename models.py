@@ -1,3 +1,4 @@
+from exceptions import VacancyNoneTypeException
 from processors import process_text
 
 
@@ -5,10 +6,10 @@ class VacancyHH:
     """Model for summary hh vacancy info."""
 
     def __init__(self, item: dict) -> None:
-        self._vacancy: dict = item
-        if not self._vacancy:
-            raise ValueError
+        if not item:
+            raise VacancyNoneTypeException('Vacancy didn\'t reached')
 
+        self._vacancy: dict = item
         self._vacancy_id: int | None = None
         self._name: str | None = None
         self._employer: str | None = None
