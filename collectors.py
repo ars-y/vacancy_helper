@@ -1,8 +1,8 @@
+import asyncio
 import requests
 
 import settings
 from bases import BaseVacancyCollector
-from managers import EventLoopContextManager
 from models import VacancyHH
 
 
@@ -30,12 +30,9 @@ class VacancyHHCollector(BaseVacancyCollector):
             for vid in vacancies_id
         ]
 
-        dataset: list = []
-        with EventLoopContextManager() as loop:
-            result = loop.run_until_complete(
-                self._async_get_response_data(request_urls, self._delay)
-            )
-            dataset.extend(result)
+        dataset: list = asyncio.run(
+            self._async_get_response_data(request_urls, self._delay)
+        )
 
         return [VacancyHH(item) for item in dataset]
 
@@ -47,12 +44,9 @@ class VacancyHHCollector(BaseVacancyCollector):
             for page_num in range(1, total_pages)
         ]
 
-        dataset: list = []
-        with EventLoopContextManager() as loop:
-            result = loop.run_until_complete(
-                self._async_get_response_data(urls, self._delay)
-            )
-            dataset.extend(result)
+        dataset: list = asyncio.run(
+            self._async_get_response_data(urls, self._delay)
+        )
 
         for data in dataset:
             if 'items' in data:
