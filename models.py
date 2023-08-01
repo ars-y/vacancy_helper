@@ -7,7 +7,7 @@ class VacancyHH:
 
     def __init__(self, item: dict) -> None:
         if not item:
-            raise VacancyNoneTypeException('Vacancy didn\'t reached')
+            raise VacancyNoneTypeException('Vacancy didn\'t reach')
 
         self._vacancy: dict = item
         self._vacancy_id: int | None = None
