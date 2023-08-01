@@ -84,7 +84,7 @@ class BaseVacancyCollector:
         """Create tasks for requests and wait it to complete."""
         limiter: EventLimiter = EventLimiter(delay)
         tasks: list = [
-            asyncio.ensure_future(self._try_make_request(limiter, url))
+            asyncio.create_task(self._try_make_request(limiter, url))
             for url in urls
         ]
         pending: set = set(tasks)
