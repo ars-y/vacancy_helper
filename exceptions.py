@@ -10,3 +10,7 @@ class URLValueException(ValueError):
             return 'Initial url \'%s\' is invalid' % self._url
 
         return super().__str__()
+
+
+class VacancyNoneTypeException(ValueError):
+    """Exception for Vacancy object is None."""
