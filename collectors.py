@@ -45,7 +45,7 @@ class VacancyHHCollector(BaseVacancyCollector):
         ]
 
         dataset: list = asyncio.run(
-            self._async_get_response_data(urls, self._delay)
+            self._get_response_data(urls, self._delay)
         )
 
         for data in dataset:
