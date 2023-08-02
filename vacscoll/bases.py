@@ -1,9 +1,9 @@
 import aiohttp
 import asyncio
 
-from db import VIDStorage
-from exceptions import URLValueException
-from processors import TextProcessor
+from .db import VIDStorage
+from .exceptions import URLValueException
+from .processors import TextProcessor
 
 
 class BaseVacancyCollector:

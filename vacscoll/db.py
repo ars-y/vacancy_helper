@@ -2,7 +2,7 @@ import datetime as dt
 import os
 import shelve
 
-from constants import DB_DIR, DB_NAME, MAX_AGE
+from .constants import DB_DIR, DB_NAME, MAX_AGE
 
 
 class VIDStorage:

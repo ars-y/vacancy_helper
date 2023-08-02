@@ -1,5 +1,5 @@
-from exceptions import VacancyNoneTypeException
-from processors import TextProcessor
+from .exceptions import VacancyNoneTypeException
+from .processors import TextProcessor
 
 
 class VacancyHH:

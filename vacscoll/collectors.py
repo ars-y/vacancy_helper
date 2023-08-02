@@ -1,9 +1,9 @@
 import asyncio
 import requests
 
-from bases import BaseVacancyCollector
-from constants import HH_REQUEST_DELAY
-from models import VacancyHH
+from .bases import BaseVacancyCollector
+from .constants import HH_REQUEST_DELAY
+from .models import VacancyHH
 
 
 class VacancyHHCollector(BaseVacancyCollector):

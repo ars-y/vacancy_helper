@@ -1,6 +1,6 @@
 import re
 
-from constants import TAG_PATTERN, URL_PATTERN
+from .constants import TAG_PATTERN, URL_PATTERN
 
 
 TAG_PATTERN: re.Pattern = re.compile(TAG_PATTERN)
