@@ -5,7 +5,7 @@ import shelve
 
 import db
 from exceptions import URLValueException
-from processors import is_correct_url
+from processors import TextProcessor
 
 
 class BaseVacancyCollector:
@@ -18,7 +18,7 @@ class BaseVacancyCollector:
         params: dict | None = None,
         filters: set | None = None
     ) -> None:
-        if not is_correct_url(url):
+        if not TextProcessor.is_correct_url(url):
             raise URLValueException(url)
 
         self._url = url
