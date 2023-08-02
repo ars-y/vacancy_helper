@@ -1,8 +1,8 @@
 import asyncio
 import requests
 
-import settings
 from bases import BaseVacancyCollector
+from constants import HH_REQUEST_DELAY
 from models import VacancyHH
 
 
@@ -15,7 +15,7 @@ class VacancyHHCollector(BaseVacancyCollector):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        self._delay: float | int = getattr(settings, '_hh_request_delay')
+        self._delay: float | int = HH_REQUEST_DELAY
 
     def recieve_vacancies(self, vacancies_id: list) -> list:
         """

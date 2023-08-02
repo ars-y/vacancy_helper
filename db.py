@@ -1,7 +1,7 @@
 import os
 import shelve
 
-from settings.globconf import DB_DIR, DB_NAME, MAX_AGE
+from constants import DB_DIR, DB_NAME, MAX_AGE
 
 
 def dir_is_exists(db_path: str) -> bool:
