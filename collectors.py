@@ -31,14 +31,13 @@ class VacancyHHCollector(BaseVacancyCollector):
         ]
 
         dataset: list = asyncio.run(
-            self._async_get_response_data(request_urls, self._delay)
+            self._get_response_data(request_urls, self._delay)
         )
 
         return [VacancyHH(item) for item in dataset]
 
     def _extract_rest_vacancies(self, url: str, total_pages: int) -> list:
         """Extract vacancies id from rest pages."""
-        vacancies_id: list = []
         urls: list = [
             url + '&page=%d' % page_num
             for page_num in range(1, total_pages)
@@ -48,15 +47,13 @@ class VacancyHHCollector(BaseVacancyCollector):
             self._get_response_data(urls, self._delay)
         )
 
-        for data in dataset:
-            if 'items' in data:
-                items: list = self._drain_response_data(data.get('items'))
-                vacancies_id += [item.get('id') for item in items]
+        return [
+            item for data in dataset
+            for item in data.get('items')
+        ]
 
-        return vacancies_id
-
-    def _drain_response_data(self, items: list) -> list:
-        """Filtering response data items."""
+    def _apply_filters(self, items: list) -> list:
+        """Filtering vacancies."""
         processed_items: list = []
 
         for item in items:
@@ -81,16 +78,20 @@ class VacancyHHCollector(BaseVacancyCollector):
         response: requests.Response = requests.get(url)
         data = response.json()
 
-        items: list = self._drain_response_data(data.get('items'))
-        vacancies_id: list = [item.get('id') for item in items]
+        vacancies_items: list = data.get('items')
 
         current_page: int = data.get('page', 0)
         total_pages: int = data.get('pages', 0)
 
         if current_page < total_pages:
-            vacancies_id.extend(
+            vacancies_items.extend(
                 self._extract_rest_vacancies(url, total_pages)
             )
+
+        if self._filters:
+            vacancies_items: list = self._apply_filters(vacancies_items)
+
+        vacancies_id: list = [item.get('id') for item in vacancies_items]
 
         return vacancies_id
 
