@@ -17,24 +17,21 @@ class VacancyHHCollector(BaseVacancyCollector):
 
         self._delay: float | int = HH_REQUEST_DELAY
 
-    def recieve_vacancies(self, vacancies_id: list) -> list:
-        """
-        Recieve Vacancy ojects.
-        Method consruct requests for async get response data
-        to initial Vacancy object and append it in list.
-        """
-        endpoint: str = 'vacancies/'
-        params: dict = {'host': 'hh.ru'}
-        request_urls: list = [
-            self.make_request_url_with_params(endpoint + vid, params)
-            for vid in vacancies_id
-        ]
+    def _apply_filters(self, items: list) -> list:
+        """Filtering vacancies."""
+        processed_items: list = []
 
-        dataset: list = asyncio.run(
-            self._get_response_data(request_urls, self._delay)
-        )
+        for item in items:
+            experience: str = item.get('experience').get('id')
+            employment: str = item.get('employment').get('id')
 
-        return [VacancyHH(item) for item in dataset]
+            if (
+                    experience not in self._filters
+                    and employment not in self._filters
+            ):
+                processed_items.append(item)
+
+        return processed_items
 
     def _extract_rest_vacancies(self, url: str, total_pages: int) -> list:
         """Extract vacancies id from rest pages."""
@@ -52,23 +49,7 @@ class VacancyHHCollector(BaseVacancyCollector):
             for item in data.get('items')
         ]
 
-    def _apply_filters(self, items: list) -> list:
-        """Filtering vacancies."""
-        processed_items: list = []
-
-        for item in items:
-            experience: str = item.get('experience').get('id')
-            employment: str = item.get('employment').get('id')
-
-            if (
-                    experience not in self._filters
-                    and employment not in self._filters
-            ):
-                processed_items.append(item)
-
-        return processed_items
-
-    def get_vacancies_id_list(self, url: str) -> list:
+    def _get_vacancies_id(self, url: str) -> list:
         """
         Collecting vacancies id in list
         from all vacancies with specified parameters.
@@ -95,11 +76,27 @@ class VacancyHHCollector(BaseVacancyCollector):
 
         return vacancies_id
 
-    def run(self) -> list:
-        """Start collecting vacancies."""
-        request_url: str = self.make_request_url_with_params()
-        vacancies_id: list = self.get_vacancies_id_list(request_url)
-        vacancies: list = self.recieve_vacancies(
-            self._sift_vacancies(vacancies_id)
+    def recieve_vacancies(self, vacancies_id: list) -> list:
+        """
+        Recieve Vacancy ojects.
+        Method consruct requests for async get response data
+        to initial Vacancy object and append it in list.
+        """
+        endpoint: str = 'vacancies/'
+        params: dict = {'host': 'hh.ru'}
+        request_urls: list = [
+            self.make_request_url_with_params(endpoint + vid, params)
+            for vid in vacancies_id
+        ]
+
+        dataset: list = asyncio.run(
+            self._get_response_data(request_urls, self._delay)
         )
-        return vacancies
+
+        return [VacancyHH(item) for item in dataset]
+
+    def run(self) -> list:
+        """Collecting vacancies and return sift vacancies id."""
+        request_url: str = self.make_request_url_with_params()
+        vacancies_id: list = self._get_vacancies_id(request_url)
+        return self._sift_vacancies(vacancies_id)
