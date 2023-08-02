@@ -1,5 +1,5 @@
 from exceptions import VacancyNoneTypeException
-from processors import process_text
+from processors import TextProcessor
 
 
 class VacancyHH:
@@ -37,11 +37,13 @@ class VacancyHH:
         self._employer = employer_info.get('name', None)
 
     def _set_description(self) -> tuple:
+        text_processor: TextProcessor = TextProcessor()
+
         description: dict = self._vacancy.get('description', None)
         if not description:
             return
 
-        self._description = process_text(description)
+        self._description = text_processor.cleaning_data(description)
 
     def _set_employment(self) -> None:
         employment: dict = self._vacancy.get('employment', None)
