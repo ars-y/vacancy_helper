@@ -40,9 +40,19 @@ class VacancyHHCollector(BaseVacancyCollector):
             for page_num in range(1, total_pages)
         ]
 
-        dataset: list = asyncio.run(
-            self._get_response_data(urls, self._delay)
-        )
+        dataset: list = []
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        
+        if loop and loop.is_running():
+            dataset = self._sync_get_response_data(urls)
+        else:
+            dataset = asyncio.run(
+                self._get_response_data(urls, self._delay)
+            )
 
         return [
             item for data in dataset
