@@ -9,7 +9,7 @@ DB_NAME: str = str(DB_DIR / 'db.vacancies')
 
 MAX_AGE: int = 7
 
-HH_REQUEST_DELAY: float | int = 0.2
+HH_REQUEST_DELAY: float | int = 0.16
 
 TAG_PATTERN: str = '<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});'
 
