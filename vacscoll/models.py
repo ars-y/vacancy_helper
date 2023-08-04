@@ -7,7 +7,7 @@ class VacancyHH:
 
     def __init__(self, item: dict) -> None:
         if not item:
-            raise VacancyNoneTypeException('Vacancy didn\'t reach')
+            raise VacancyNoneTypeException()
 
         self._vacancy: dict = item
         self._vacancy_id: int | None = None
@@ -20,7 +20,7 @@ class VacancyHH:
         self._vacancy_url: str | None = self._get_vacancy_url()
 
         self.__fill_vacancy()
-    
+
     def _set_vacancy_id(self) -> None:
         self._vacancy_id = self._vacancy.get('id', None)
 

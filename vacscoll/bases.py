@@ -17,7 +17,9 @@ class BaseVacancyCollector:
         filters: set | None = None
     ) -> None:
         if not TextProcessor.is_correct_url(url):
-            raise URLValueException(url)
+            raise URLValueException(
+                'initial url \'%s\' is invalid' % url
+            )
 
         self._url = url
         self._endpoint = endpoint
