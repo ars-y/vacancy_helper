@@ -1,5 +1,12 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.ext import ContextTypes, ConversationHandler
+from telegram.ext import (
+    CallbackQueryHandler,
+    CommandHandler,
+    ContextTypes,
+    ConversationHandler,
+    filters,
+    MessageHandler,
+)
 
 from .constants import START_ROUTES, KEYWORDS_INPUT, END_ROUTES
 
@@ -109,3 +116,25 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     user_data.clear()
     return ConversationHandler.END
+
+
+def create_conversation_handler() -> ConversationHandler:
+    return ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            START_ROUTES: [
+                CallbackQueryHandler(collect_from_hh, pattern='hh'),
+                CallbackQueryHandler(collect_all, pattern='all'),
+            ],
+            KEYWORDS_INPUT: [
+                MessageHandler(
+                    filters.TEXT & ~(filters.COMMAND | filters.Regex('^Done$')),
+                    recieve_keywords
+                )
+            ],
+            END_ROUTES: [
+                CallbackQueryHandler(menu, pattern='back'),
+            ]
+        },
+        fallbacks=[MessageHandler(filters.Regex("^Done$"), done)],
+    )
