@@ -108,10 +108,3 @@ class VacancyHHCollector(BaseVacancyCollector):
         request_url: str = self.make_request_url_with_params()
         vacancies_id: list = await self._get_vacancies_id(request_url)
         return self._sift_vacancies(vacancies_id)
-
-
-class VacancyRabotaCollector(BaseVacancyCollector):
-    """Collector vacancies from rabota.ru"""
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
