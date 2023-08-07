@@ -9,7 +9,7 @@ from telegram.ext import (
 )
 
 from .constants import END_ROUTES, START_ROUTES
-from vacscoll.workers import get_vacsid
+from vacscoll.workers import get_vacs
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -94,13 +94,13 @@ async def recieve_keywords(
     name: str = context.user_data['src_name']
     del context.user_data['src_name']
 
-    vacs_ids: list = await get_vacsid(name, keywords)
+    vacancies: list = await get_vacs(name, keywords)
 
     reply_markup = InlineKeyboardMarkup(
         [[InlineKeyboardButton('Назад', callback_data='back')]]
     )
     await update.message.reply_text(
-        f'Найдено вакансий: {len(vacs_ids)}',
+        f'Найдено вакансий: {len(vacancies)}',
         reply_markup=reply_markup
     )
 
@@ -109,18 +109,11 @@ async def recieve_keywords(
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """End the conversation with bot."""
-    user_data = context.user_data
-    if 'keywords' in user_data:
-        del user_data['keywords']
-    
-    if 'src_name' in user_data:
-        del user_data['src_name']
-
     await update.message.reply_text(
         'Подбор остановлен.\nДля запуска используйте команду /start'
     )
 
-    user_data.clear()
+    context.user_data.clear()
     return ConversationHandler.END
 
 

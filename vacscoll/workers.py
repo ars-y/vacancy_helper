@@ -1,8 +1,8 @@
 from .collectors import VacancyHHCollector
 
 
-async def get_vacsid(src_name: str, keywords: str) -> list:
-    """Getting vacancies id list form job aggregators API."""
+async def get_vacs(src_name: str, keywords: str) -> list:
+    """Getting vacancies objects list form job aggregators API."""
     if src_name == 'hh':
         text_param: str = '+'.join(keywords.split())
         params: dict = {
@@ -14,4 +14,5 @@ async def get_vacsid(src_name: str, keywords: str) -> list:
         endpoint: str = 'vacancies'
 
         vacscoll = VacancyHHCollector(url, endpoint, params)
-        return await vacscoll.run()
+        vacs_ids: list = await vacscoll.run()
+        return await vacscoll.recieve_vacancies(vacs_ids)
