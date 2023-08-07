@@ -8,7 +8,8 @@ from telegram.ext import (
     MessageHandler,
 )
 
-from .constants import START_ROUTES, KEYWORDS_INPUT, END_ROUTES
+from .constants import END_ROUTES, START_ROUTES
+from vacscoll.workers import get_vacsid
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -52,17 +53,17 @@ async def collect_from_hh(
     query = update.callback_query
     await query.answer()
 
-    keyboard: list = [
-        [InlineKeyboardButton('Назад', callback_data='back')],
-    ]
+    context.user_data['src_name'] = query.data
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    reply_markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton('Назад', callback_data='back')]]
+    )
     await query.edit_message_text(
         'Перечислите ключевые слова для поиска',
         reply_markup=reply_markup
     )
 
-    return KEYWORDS_INPUT
+    return START_ROUTES
 
 
 async def collect_all(
@@ -72,11 +73,10 @@ async def collect_all(
     query = update.callback_query
     await query.answer()
 
-    keyboard: list = [
-        [InlineKeyboardButton('Назад', callback_data='back')],
-    ]
+    reply_markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton('Назад', callback_data='back')]]
+    )
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(
         'Функция в разработке...',
         reply_markup=reply_markup
@@ -91,13 +91,16 @@ async def recieve_keywords(
     keywords = update.message.text
     context.user_data['keywords'] = keywords
 
-    keyboard: list = [
-        [InlineKeyboardButton('Назад', callback_data='back')],
-    ]
+    name: str = context.user_data['src_name']
+    del context.user_data['src_name']
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    vacs_ids: list = await get_vacsid(name, keywords)
+
+    reply_markup = InlineKeyboardMarkup(
+        [[InlineKeyboardButton('Назад', callback_data='back')]]
+    )
     await update.message.reply_text(
-        f'Ты ввел следующие ключевые слова: {keywords.lower()}',
+        f'Найдено вакансий: {len(vacs_ids)}',
         reply_markup=reply_markup
     )
 
@@ -109,6 +112,9 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user_data = context.user_data
     if 'keywords' in user_data:
         del user_data['keywords']
+    
+    if 'src_name' in user_data:
+        del user_data['src_name']
 
     await update.message.reply_text(
         'Подбор остановлен.\nДля запуска используйте команду /start'
@@ -125,12 +131,11 @@ def create_conversation_handler() -> ConversationHandler:
             START_ROUTES: [
                 CallbackQueryHandler(collect_from_hh, pattern='hh'),
                 CallbackQueryHandler(collect_all, pattern='all'),
-            ],
-            KEYWORDS_INPUT: [
                 MessageHandler(
                     filters.TEXT & ~(filters.COMMAND | filters.Regex('^Done$')),
                     recieve_keywords
-                )
+                ),
+                CallbackQueryHandler(menu, pattern='back'),
             ],
             END_ROUTES: [
                 CallbackQueryHandler(menu, pattern='back'),
