@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Update
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
@@ -8,21 +8,22 @@ from telegram.ext import (
     MessageHandler,
 )
 
-from .constants import END_ROUTES, START_ROUTES
+from .constants import (
+    ALL_BUTTON,
+    BACK_BUTTON,
+    END_ROUTES,
+    HH_BUTTON,
+    START_ROUTES,
+)
+from .keyboards import back_keyboard, select_keyboard
 from vacscoll.workers import get_vacs
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Start bot with inline keyboard."""
-    keyboard: list = [
-        [InlineKeyboardButton('Подбор с hh.ru', callback_data='hh')],
-        [InlineKeyboardButton('Подбор всех', callback_data='all')],
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
     await update.message.reply_text(
         'Выберите источник вакансий',
-        reply_markup=reply_markup,
+        reply_markup=select_keyboard(),
     )
 
     return START_ROUTES
@@ -32,15 +33,9 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     query = update.callback_query
     await query.answer()
 
-    keyboard: list = [
-        [InlineKeyboardButton('Подбор с hh.ru', callback_data='hh')],
-        [InlineKeyboardButton('Подбор всех', callback_data='all')],
-    ]
-
-    reply_markup = InlineKeyboardMarkup(keyboard)
     await query.edit_message_text(
         'Выберите источник вакансий',
-        reply_markup=reply_markup,
+        reply_markup=select_keyboard(),
     )
 
     return START_ROUTES
@@ -55,12 +50,9 @@ async def collect_from_hh(
 
     context.user_data['src_name'] = query.data
 
-    reply_markup = InlineKeyboardMarkup(
-        [[InlineKeyboardButton('Назад', callback_data='back')]]
-    )
     await query.edit_message_text(
         'Перечислите ключевые слова для поиска',
-        reply_markup=reply_markup
+        reply_markup=back_keyboard()
     )
 
     return START_ROUTES
@@ -73,13 +65,9 @@ async def collect_all(
     query = update.callback_query
     await query.answer()
 
-    reply_markup = InlineKeyboardMarkup(
-        [[InlineKeyboardButton('Назад', callback_data='back')]]
-    )
-
     await query.edit_message_text(
         'Функция в разработке...',
-        reply_markup=reply_markup
+        reply_markup=back_keyboard()
     )
     return END_ROUTES
 
@@ -96,12 +84,9 @@ async def recieve_keywords(
 
     vacancies: list = await get_vacs(name, keywords)
 
-    reply_markup = InlineKeyboardMarkup(
-        [[InlineKeyboardButton('Назад', callback_data='back')]]
-    )
     await update.message.reply_text(
         f'Найдено вакансий: {len(vacancies)}',
-        reply_markup=reply_markup
+        reply_markup=back_keyboard()
     )
 
     return END_ROUTES
@@ -122,16 +107,16 @@ def create_conversation_handler() -> ConversationHandler:
         entry_points=[CommandHandler('start', start)],
         states={
             START_ROUTES: [
-                CallbackQueryHandler(collect_from_hh, pattern='hh'),
-                CallbackQueryHandler(collect_all, pattern='all'),
+                CallbackQueryHandler(collect_from_hh, pattern=HH_BUTTON),
+                CallbackQueryHandler(collect_all, pattern=ALL_BUTTON),
                 MessageHandler(
                     filters.TEXT & ~(filters.COMMAND | filters.Regex('^Done$')),
                     recieve_keywords
                 ),
-                CallbackQueryHandler(menu, pattern='back'),
+                CallbackQueryHandler(menu, pattern=BACK_BUTTON),
             ],
             END_ROUTES: [
-                CallbackQueryHandler(menu, pattern='back'),
+                CallbackQueryHandler(menu, pattern=BACK_BUTTON),
             ]
         },
         fallbacks=[MessageHandler(filters.Regex("^Done$"), done)],
