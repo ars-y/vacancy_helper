@@ -11,11 +11,20 @@ from telegram.ext import (
 from .constants import (
     ALL_BUTTON,
     BACK_BUTTON,
+    CHUNK_SIZE,
     END_ROUTES,
     HH_BUTTON,
+    NEXT_BUTTON,
+    SEND_VACS,
     START_ROUTES,
+    TRIM_DESCRIPTION
 )
-from .keyboards import back_keyboard, select_keyboard
+from .keyboards import (
+    back_keyboard,
+    next_keyboard,
+    select_keyboard,
+    url_keyboard
+)
 from vacscoll.workers import get_vacs
 
 
@@ -94,12 +103,67 @@ async def recieve_keywords(
 
     vacancies: list = await get_vacs(name, keywords)
 
-    await update.message.reply_text(
-        f'Найдено вакансий: {len(vacancies)}',
-        reply_markup=back_keyboard()
+    if not vacancies:
+        await update.message.reply_text(
+            'По вашему запросу вакансий не найдено',
+            reply_markup=back_keyboard()
+        )
+
+        return END_ROUTES
+
+    context.user_data['vacs'] = vacancies
+    vacs_info_message: str = (
+        f'Надено вакансий: {len(vacancies)}\n'
+        f'Показать {CHUNK_SIZE} вакансии'
     )
 
-    return END_ROUTES
+    await update.message.reply_text(
+        vacs_info_message,
+        reply_markup=next_keyboard()
+    )
+
+    return SEND_VACS
+
+
+async def retrieve_vacancies(
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> int:
+    query = update.callback_query
+    await query.answer()
+
+    vacancies = context.user_data['vacs']
+    vacs_chunk, vacancies = vacancies[:CHUNK_SIZE], vacancies[CHUNK_SIZE:]
+    context.user_data['vacs'] = vacancies
+    while vacs_chunk:
+        vacancy = vacs_chunk.pop()
+        description = vacancy.description[:TRIM_DESCRIPTION] + '...'
+        vacancy_info: str = (
+            f'{vacancy.name}\n'
+            f'{vacancy.employment}\n'
+            f'Компания: {vacancy.employer}\n\n'
+            f'Описание:\n{description}\n\n'
+        )
+        await query.message.reply_text(
+            vacancy_info,
+            reply_markup=url_keyboard(vacancy.url)
+        )
+
+    if not vacancies:
+        del context.user_data['vacs']
+        await query.message.reply_text(
+            'Больше вакансий нет',
+            reply_markup=back_keyboard()
+        )
+
+        return END_ROUTES
+
+    await query.message.reply_text(
+        f'Показать ещё {CHUNK_SIZE} вакансии',
+        reply_markup=next_keyboard()
+    )
+
+    return SEND_VACS
 
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -125,6 +189,9 @@ def create_conversation_handler() -> ConversationHandler:
                     recieve_keywords
                 ),
                 CallbackQueryHandler(menu, pattern=BACK_BUTTON),
+            ],
+            SEND_VACS: [
+                CallbackQueryHandler(retrieve_vacancies, pattern=NEXT_BUTTON),
             ],
             END_ROUTES: [
                 CallbackQueryHandler(menu, pattern=BACK_BUTTON),
