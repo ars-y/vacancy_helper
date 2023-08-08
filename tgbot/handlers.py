@@ -30,6 +30,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """
+    Main menu with inline keyboard.
+    Handle user select buttons.
+    """
     query = update.callback_query
     await query.answer()
 
@@ -45,6 +49,7 @@ async def collect_from_hh(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ) -> int:
+    """Select hh button handler."""
     query = update.callback_query
     await query.answer()
 
@@ -62,6 +67,7 @@ async def collect_all(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ) -> int:
+    """Select all button handler."""
     query = update.callback_query
     await query.answer()
 
@@ -76,6 +82,10 @@ async def recieve_keywords(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE
 ) -> int:
+    """
+    Message handler recieve keywords from user input
+    to get vacancies from aggregator API.
+    """
     keywords = update.message.text
     context.user_data['keywords'] = keywords
 
@@ -103,6 +113,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 def create_conversation_handler() -> ConversationHandler:
+    """Creating ConversationHandler instance."""
     return ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
@@ -119,5 +130,5 @@ def create_conversation_handler() -> ConversationHandler:
                 CallbackQueryHandler(menu, pattern=BACK_BUTTON),
             ]
         },
-        fallbacks=[MessageHandler(filters.Regex("^Done$"), done)],
+        fallbacks=[MessageHandler(filters.Regex('^Done$'), done)],
     )
