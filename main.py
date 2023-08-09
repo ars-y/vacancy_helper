@@ -1,7 +1,7 @@
 from telegram import Update
 from telegram.ext import Application
 
-from tgbot.config import TELEGRAM_TOKEN
+from tgbot.config import TELEGRAM_TOKEN, setup_logging
 from tgbot.handlers import create_conversation_handler
 
 
@@ -17,4 +17,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    setup_logging()
     main()
