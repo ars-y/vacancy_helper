@@ -17,7 +17,6 @@ from .constants import (
     NEXT_BUTTON,
     SEND_VACS,
     START_ROUTES,
-    TRIM_DESCRIPTION
 )
 from .keyboards import (
     back_keyboard,
@@ -25,6 +24,7 @@ from .keyboards import (
     select_keyboard,
     url_keyboard
 )
+from .utils import format_message
 from vacscoll.workers import get_vacs
 
 
@@ -112,14 +112,11 @@ async def recieve_keywords(
         return END_ROUTES
 
     context.user_data['vacs'] = vacancies
-    vacs_info_message: str = (
-        f'Надено вакансий: {len(vacancies)}\n'
-        f'Показать {CHUNK_SIZE} вакансии'
-    )
+    vacs_info_message: str = f'Надено вакансий: {len(vacancies)}'
 
     await update.message.reply_text(
         vacs_info_message,
-        reply_markup=next_keyboard()
+        reply_markup=next_keyboard(f'Показать {CHUNK_SIZE} вакансии')
     )
 
     return SEND_VACS
@@ -137,15 +134,8 @@ async def retrieve_vacancies(
     context.user_data['vacs'] = vacancies
     while vacs_chunk:
         vacancy = vacs_chunk.pop()
-        description = vacancy.description[:TRIM_DESCRIPTION] + '...'
-        vacancy_info: str = (
-            f'{vacancy.name}\n'
-            f'{vacancy.employment}\n'
-            f'Компания: {vacancy.employer}\n\n'
-            f'Описание:\n{description}\n\n'
-        )
         await query.message.reply_text(
-            vacancy_info,
+            format_message(vacancy),
             reply_markup=url_keyboard(vacancy.url)
         )
 
@@ -160,7 +150,7 @@ async def retrieve_vacancies(
 
     await query.message.reply_text(
         f'Показать ещё {CHUNK_SIZE} вакансии',
-        reply_markup=next_keyboard()
+        reply_markup=next_keyboard('Далее')
     )
 
     return SEND_VACS

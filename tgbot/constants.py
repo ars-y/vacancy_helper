@@ -9,5 +9,3 @@ BACK_BUTTON: str = 'back'
 NEXT_BUTTON: str = 'next'
 
 CHUNK_SIZE: int = 3
-
-TRIM_DESCRIPTION: int = 200

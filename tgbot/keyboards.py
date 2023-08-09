@@ -20,10 +20,10 @@ def back_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def next_keyboard() -> InlineKeyboardMarkup:
+def next_keyboard(text: str) -> InlineKeyboardMarkup:
     """Show next vacancies keyboard."""
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton('Далее', callback_data=NEXT_BUTTON)]]
+        [[InlineKeyboardButton(text, callback_data=NEXT_BUTTON)]]
     )
 
 
