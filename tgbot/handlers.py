@@ -19,8 +19,7 @@ from .constants import (
     START_ROUTES,
 )
 from .keyboards import (
-    back_keyboard,
-    next_keyboard,
+    move_to_keyboard,
     select_keyboard,
     url_keyboard
 )
@@ -66,7 +65,7 @@ async def collect_from_hh(
 
     await query.edit_message_text(
         'Перечислите ключевые слова для поиска',
-        reply_markup=back_keyboard()
+        reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
     )
 
     return START_ROUTES
@@ -82,7 +81,7 @@ async def collect_all(
 
     await query.edit_message_text(
         'Функция в разработке...',
-        reply_markup=back_keyboard()
+        reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
     )
     return END_ROUTES
 
@@ -106,17 +105,21 @@ async def recieve_keywords(
     if not vacancies:
         await update.message.reply_text(
             'По вашему запросу вакансий не найдено',
-            reply_markup=back_keyboard()
+            reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
         )
 
         return END_ROUTES
 
     context.user_data['vacs'] = vacancies
     vacs_info_message: str = f'Надено вакансий: {len(vacancies)}'
+    vsize: int = len(vacancies)
+    total_vacs: int = CHUNK_SIZE if CHUNK_SIZE < vsize else vsize
 
     await update.message.reply_text(
         vacs_info_message,
-        reply_markup=next_keyboard(f'Показать {CHUNK_SIZE} вакансии')
+        reply_markup=move_to_keyboard(
+            f'Показать {total_vacs} вакансии', NEXT_BUTTON
+        )
     )
 
     return SEND_VACS
@@ -143,14 +146,16 @@ async def retrieve_vacancies(
         del context.user_data['vacs']
         await query.message.reply_text(
             'Больше вакансий нет',
-            reply_markup=back_keyboard()
+            reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
         )
 
         return END_ROUTES
 
+    vsize: int = len(vacancies)
+    total_vacs: int = CHUNK_SIZE if CHUNK_SIZE < vsize else vsize
     await query.message.reply_text(
-        f'Показать ещё {CHUNK_SIZE} вакансии',
-        reply_markup=next_keyboard('Далее')
+        f'Показать ещё {total_vacs} вакансии',
+        reply_markup=move_to_keyboard('Далее', NEXT_BUTTON)
     )
 
     return SEND_VACS
