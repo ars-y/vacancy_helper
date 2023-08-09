@@ -7,6 +7,8 @@ from telegram.ext import (
     filters,
     MessageHandler,
 )
+from telegram.warnings import PTBUserWarning
+from warnings import filterwarnings
 
 from .constants import (
     ALL_BUTTON,
@@ -25,6 +27,9 @@ from .keyboards import (
 )
 from .utils import format_message
 from vacscoll.workers import get_vacs
+
+
+filterwarnings('ignore', r'.*CallbackQueryHandler', PTBUserWarning)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
