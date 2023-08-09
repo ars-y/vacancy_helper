@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from .constants import ALL_BUTTON, BACK_BUTTON, HH_BUTTON, NEXT_BUTTON
+from .constants import ALL_BUTTON, HH_BUTTON
 
 
 def select_keyboard() -> InlineKeyboardMarkup:
@@ -13,17 +13,10 @@ def select_keyboard() -> InlineKeyboardMarkup:
     )
 
 
-def back_keyboard() -> InlineKeyboardMarkup:
-    """Keyboard to back at main menu."""
+def move_to_keyboard(text: str, callback_data: str) -> InlineKeyboardMarkup:
+    """Make one button with text and callback data."""
     return InlineKeyboardMarkup(
-        [[InlineKeyboardButton('Назад', callback_data=BACK_BUTTON)]]
-    )
-
-
-def next_keyboard(text: str) -> InlineKeyboardMarkup:
-    """Show next vacancies keyboard."""
-    return InlineKeyboardMarkup(
-        [[InlineKeyboardButton(text, callback_data=NEXT_BUTTON)]]
+        [[InlineKeyboardButton(text, callback_data=callback_data)]]
     )
 
 
