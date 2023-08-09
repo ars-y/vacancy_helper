@@ -1,3 +1,4 @@
+import logging
 from telegram import Update
 from telegram.ext import (
     CallbackQueryHandler,
@@ -47,6 +48,8 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     Main menu with inline keyboard.
     Handle user select buttons.
     """
+    logging.info('User return in main menu')
+
     query = update.callback_query
     await query.answer()
 
@@ -63,6 +66,8 @@ async def collect_from_hh(
     context: ContextTypes.DEFAULT_TYPE
 ) -> int:
     """Select hh button handler."""
+    logging.info('User select collect from api.hh.ru')
+
     query = update.callback_query
     await query.answer()
 
@@ -81,6 +86,8 @@ async def collect_all(
     context: ContextTypes.DEFAULT_TYPE
 ) -> int:
     """Select all button handler."""
+    logging.info('User select collect from all aggregators')
+
     query = update.callback_query
     await query.answer()
 
@@ -99,15 +106,18 @@ async def recieve_keywords(
     Message handler recieve keywords from user input
     to get vacancies from aggregator API.
     """
+    logging.info('User input keywords')
     keywords = update.message.text
     context.user_data['keywords'] = keywords
 
     name: str = context.user_data['src_name']
     del context.user_data['src_name']
 
+    logging.info('Trying get vacancies')
     vacancies: list = await get_vacs(name, keywords)
 
     if not vacancies:
+        logging.info('Not found vacancies')
         await update.message.reply_text(
             'По вашему запросу вакансий не найдено',
             reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
@@ -115,6 +125,7 @@ async def recieve_keywords(
 
         return END_ROUTES
 
+    logging.info('Vacancies received successfully')
     context.user_data['vacs'] = vacancies
     vacs_info_message: str = f'Надено вакансий: {len(vacancies)}'
     vsize: int = len(vacancies)
@@ -141,6 +152,7 @@ async def retrieve_vacancies(
     vacs_chunk, vacancies = vacancies[:CHUNK_SIZE], vacancies[CHUNK_SIZE:]
     context.user_data['vacs'] = vacancies
     while vacs_chunk:
+        logging.info('Bot sending vacancy info message')
         vacancy = vacs_chunk.pop()
         await query.message.reply_text(
             format_message(vacancy),
@@ -148,6 +160,7 @@ async def retrieve_vacancies(
         )
 
     if not vacancies:
+        logging.info('Vacancies are over. Bot offers to return to main menu')
         del context.user_data['vacs']
         await query.message.reply_text(
             'Больше вакансий нет',
@@ -168,6 +181,7 @@ async def retrieve_vacancies(
 
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """End the conversation with bot."""
+    logging.info('User cancel collecting')
     await update.message.reply_text(
         'Подбор остановлен.\nДля запуска используйте команду /start'
     )
