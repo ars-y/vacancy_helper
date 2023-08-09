@@ -2,7 +2,7 @@ from .collectors import VacancyHHCollector
 
 
 async def get_vacs(src_name: str, keywords: str) -> list:
-    """Getting vacancies objects list form job aggregators API."""
+    """Getting vacancies objects list from job aggregators API."""
     if src_name == 'hh':
         text_param: str = '+'.join(keywords.split())
         params: dict = {
