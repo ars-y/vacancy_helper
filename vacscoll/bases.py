@@ -52,13 +52,13 @@ class BaseVacancyCollector:
             async with session.get(url) as response:
                 return await response.json()
 
-    def _sift_vacancies(self, vacancies_id: list) -> list:
+    def _sift_vacancies(self, vacancies: list) -> list:
         """Sift vacancies to leave new ones. New vacancies save in database."""
         old_vacancies: set = self._storage.load()
         new_vacancies: list = [
-            vid for vid in vacancies_id if vid not in old_vacancies
+            vac for vac in vacancies if vac.id not in old_vacancies
         ]
-        self._storage.save(vacancies_id)
+        self._storage.save(vacancies)
         return new_vacancies
 
     def make_request_url_with_params(

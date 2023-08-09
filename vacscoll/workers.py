@@ -14,5 +14,4 @@ async def get_vacs(src_name: str, keywords: str) -> list:
         endpoint: str = 'vacancies'
 
         vacscoll = VacancyHHCollector(url, endpoint, params)
-        vacs_ids: list = await vacscoll.run()
-        return await vacscoll.recieve_vacancies(vacs_ids)
+        return await vacscoll.run()

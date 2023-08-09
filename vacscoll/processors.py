@@ -14,10 +14,7 @@ class TextProcessor:
         pass
 
     def cleaning_data(self, strings: str) -> str:
-        """
-        Cleaning html tags from input strings if exists.
-        Additing bullet and carry characters.
-        """
+        """Cleaning html tags from input strings if exists."""
         if not strings:
             return
 
@@ -29,20 +26,8 @@ class TextProcessor:
                 strings[i] = self._remove_tags(strings[i])
 
         strings: list = self._remove_empty_elements(strings)
-        self._add_carry(strings)
 
         return ' '.join(strings)
-
-    def _add_carry(self, strings: list) -> None:
-        """
-        Replace ':' and ';' with hypen bullet.
-        Add extra carry after dot.
-        """
-        for i in range(len(strings) - 1):
-            if ':' in strings[i] or ';' in strings[i]:
-                strings[i] += '\n-'
-            elif '.' in strings[i]:
-                strings[i] += '\n\n'
 
     def _remove_tags(self, string: str) -> list:
         """Remove html tags from string."""

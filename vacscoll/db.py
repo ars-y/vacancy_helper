@@ -36,10 +36,11 @@ class VIDStorage:
         if not self._file_is_exists():
             self._create_db()
 
-    def save(self, vacancies_id: list) -> None:
+    def save(self, vacancies: list) -> None:
         """Save vacancies id in db with timestamp."""
         with shelve.open(self._db_name) as vdb:
-            for vid in vacancies_id:
+            for vac in vacancies:
+                vid = vac.id
                 if vid not in vdb:
                     current_time = dt.datetime.now()
                     vdb[vid] = dt.datetime.timestamp(current_time)
