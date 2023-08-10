@@ -204,8 +204,7 @@ def create_conversation_handler() -> ConversationHandler:
                 CallbackQueryHandler(collect_from_hh, pattern=HH_BUTTON),
                 CallbackQueryHandler(collect_all, pattern=ALL_BUTTON),
                 MessageHandler(
-                    filters.TEXT & ~(filters.COMMAND | filters.Regex('^Done$')),
-                    recieve_keywords
+                    filters.TEXT & ~(filters.COMMAND), recieve_keywords
                 ),
                 CallbackQueryHandler(menu, pattern=BACK_BUTTON),
             ],
@@ -216,5 +215,5 @@ def create_conversation_handler() -> ConversationHandler:
                 CallbackQueryHandler(menu, pattern=BACK_BUTTON),
             ]
         },
-        fallbacks=[MessageHandler(filters.Regex('^Done$'), done)],
+        fallbacks=[CommandHandler('done', done)],
     )
