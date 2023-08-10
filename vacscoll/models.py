@@ -65,6 +65,18 @@ class VacancyHH:
         return text_processor.cleaning_data(responsibilities)
 
     @property
+    def salary(self) -> tuple | None:
+        salary_info: dict = self._vacancy.get('salary')
+        if not salary_info:
+            return
+
+        min_bound = salary_info.get('from')
+        max_bound = salary_info.get('to')
+        currency = salary_info.get('currency')
+
+        return min_bound, max_bound, currency
+
+    @property
     def url(self) -> str | None:
         return self._vacancy.get('alternate_url')
 
