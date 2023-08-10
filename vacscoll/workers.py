@@ -1,4 +1,5 @@
 from .collectors import VacancyHHCollector
+from .db import VIDStorage
 
 
 async def get_vacs(src_name: str, keywords: str) -> list:
@@ -15,3 +16,8 @@ async def get_vacs(src_name: str, keywords: str) -> list:
 
         vacscoll = VacancyHHCollector(url, endpoint, params)
         return await vacscoll.run()
+
+
+def remove_unrecieved(vacancies: list) -> None:
+    """Remove unrecieved vacancies ids from db."""
+    VIDStorage().clean([vac.id for vac in vacancies])

@@ -36,6 +36,13 @@ class VIDStorage:
         if not self._file_is_exists():
             self._create_db()
 
+    def clean(self, vacancies_ids: list) -> None:
+        """Remove vacancies id from db."""
+        with shelve.open(self._db_name) as vdb:
+            for vid in vacancies_ids:
+                if vid in vdb:
+                    vdb.pop(vid)
+
     def save(self, vacancies: list) -> None:
         """Save vacancies id in db with timestamp."""
         with shelve.open(self._db_name) as vdb:
@@ -60,8 +67,7 @@ class VIDStorage:
                 if pub_date + time_delta < current_date:
                     expired_ids.append(vid)
 
-            if expired_ids:
-                for vid in expired_ids:
-                    vdb.pop(vid)
+        if expired_ids:
+            self.clean(expired_ids)
 
         return vacancies_id

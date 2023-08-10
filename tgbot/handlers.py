@@ -27,7 +27,7 @@ from .keyboards import (
     url_keyboard
 )
 from .utils import format_message
-from vacscoll.workers import get_vacs
+from vacscoll.workers import get_vacs, remove_unrecieved
 
 
 filterwarnings('ignore', r'.*CallbackQueryHandler', PTBUserWarning)
@@ -182,6 +182,11 @@ async def retrieve_vacancies(
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """End the conversation with bot."""
     logging.info('User cancel collecting')
+
+    if 'vacs' in context.user_data:
+        remove_unrecieved(context.user_data['vacs'])
+        del context.user_data['vacs']
+
     await update.message.reply_text(
         'Подбор остановлен.\nДля запуска используйте команду /start'
     )
