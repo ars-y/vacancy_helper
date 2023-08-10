@@ -24,9 +24,22 @@ def format_message(vacancy: VacancyHH) -> str:
     vacancy_info: list = [
         f'{vacancy.name}\n',
         f'{vacancy.employment}\n',
-        f'Компания: {vacancy.employer}\n\n',
     ]
 
+    if vacancy.salary:
+        vacancy_info.append('ЗП: ')
+        min_bound, max_bound, currency = vacancy.salary
+        if min_bound and not max_bound:
+            vacancy_info.append(f'от {str(min_bound)} {currency}')
+        elif not min_bound and max_bound:
+            vacancy_info.append(f'до {str(max_bound)} {currency}')
+        else:
+            vacancy_info.append(
+                f'от {str(min_bound)} до {str(max_bound)} {currency}'
+            )
+        vacancy_info.append('\n')
+
+    vacancy_info.append(f'Компания: {vacancy.employer}\n\n')
     if vacancy.requirements:
         vacancy_info.append(f'Требования:\n{vacancy.requirements}\n\n')
 
