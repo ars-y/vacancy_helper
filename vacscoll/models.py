@@ -37,6 +37,14 @@ class VacancyHH:
         return employer_info.get('name')
 
     @property
+    def location(self) -> str | None:
+        area: dict = self._vacancy.get('area')
+        if not area:
+            return
+
+        return area.get('name')
+
+    @property
     def requirements(self) -> str | None:
         text_processor: TextProcessor = TextProcessor()
 

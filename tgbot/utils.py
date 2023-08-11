@@ -39,6 +39,9 @@ def format_message(vacancy: VacancyHH) -> str:
             )
         vacancy_info.append('\n')
 
+    if vacancy.location:
+        vacancy_info.append(f'Локация: {vacancy.location}\n')
+
     vacancy_info.append(f'Компания: {vacancy.employer}\n\n')
     if vacancy.requirements:
         vacancy_info.append(f'Требования:\n{vacancy.requirements}\n\n')

@@ -23,25 +23,10 @@ class BaseVacancyCollector:
 
         self._url = url
         self._endpoint = endpoint
-        self._params = params
+        self._params = params or {}
         self._filters = filters or set()
 
         self._storage = VIDStorage()
-
-    async def _get_response_data(
-        self,
-        urls: list,
-        delay: float | int = 0
-    ) -> list:
-        """Create tasks with delay to make requests."""
-        tasks: list = []
-        for url in urls:
-            tasks.append(
-                asyncio.create_task(make_request(url))
-            )
-            await asyncio.sleep(delay)
-
-        return await asyncio.gather(*tasks)
 
     def _sift_vacancies(self, vacancies: list) -> list:
         """Sift vacancies to leave new ones. New vacancies save in database."""
@@ -68,17 +53,38 @@ class BaseVacancyCollector:
         if not params:
             params = self._params
 
-        if not endpoint or not params:
+        if not endpoint and not params:
             return request_url
 
         if not request_url.endswith('/'):
             request_url += '/'
 
-        request_url += endpoint + '?'
+        request_url += endpoint
 
         params_string: list = [
             k + '=' + params[k]
             for k in params
         ]
 
+        if params_string:
+            request_url += '?'
+
         return request_url + '&'.join(params_string)
+
+    async def get_response_data(
+        self,
+        urls: list,
+        delay: float | int = 0
+    ) -> list:
+        """
+        Create tasks with delay to make requests.
+        Return list of decode JSON response data.
+        """
+        tasks: list = []
+        for url in urls:
+            tasks.append(
+                asyncio.create_task(make_request(url))
+            )
+            await asyncio.sleep(delay)
+
+        return await asyncio.gather(*tasks)

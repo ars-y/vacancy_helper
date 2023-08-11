@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from .constants import HH_BUTTON
+from .constants import HH_BUTTON, NEXT_BUTTON, SKIP_BUTTON, BACK_BUTTON
 
 
 def select_keyboard() -> InlineKeyboardMarkup:
@@ -23,4 +23,14 @@ def url_keyboard(url: str) -> InlineKeyboardMarkup:
     """Make url button under vacancy info."""
     return InlineKeyboardMarkup(
         [[InlineKeyboardButton('Подробнее', url=url)]]
+    )
+
+
+def next_skip_back(_next: str, _skip: str, _back: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        [
+            [InlineKeyboardButton(_next, callback_data=NEXT_BUTTON)],
+            [InlineKeyboardButton(_skip, callback_data=SKIP_BUTTON)],
+            [InlineKeyboardButton(_back, callback_data=BACK_BUTTON)],
+        ]
     )

@@ -43,7 +43,7 @@ class VacancyHHCollector(BaseVacancyCollector):
             for page_num in range(1, total_pages)
         ]
 
-        dataset = await self._get_response_data(urls, self._delay)
+        dataset = await self.get_response_data(urls, self._delay)
 
         return [
             item for data in dataset
@@ -57,7 +57,7 @@ class VacancyHHCollector(BaseVacancyCollector):
         If response contains more than one page,
         then make async requests for remaining pages.
         """
-        dataset: list = await self._get_response_data([url])
+        dataset: list = await self.get_response_data([url])
 
         data: dict = dict(*dataset)
 
