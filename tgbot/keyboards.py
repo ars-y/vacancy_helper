@@ -1,6 +1,6 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 
-from .constants import ALL_BUTTON, HH_BUTTON
+from .constants import HH_BUTTON
 
 
 def select_keyboard() -> InlineKeyboardMarkup:
@@ -8,7 +8,6 @@ def select_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         [
             [InlineKeyboardButton('Подбор с hh.ru', callback_data=HH_BUTTON)],
-            [InlineKeyboardButton('Подбор всех', callback_data=ALL_BUTTON)],
         ]
     )
 

@@ -12,7 +12,6 @@ from telegram.warnings import PTBUserWarning
 from warnings import filterwarnings
 
 from .constants import (
-    ALL_BUTTON,
     BACK_BUTTON,
     CHUNK_SIZE,
     END_ROUTES,
@@ -79,23 +78,6 @@ async def collect_from_hh(
     )
 
     return START_ROUTES
-
-
-async def collect_all(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-) -> int:
-    """Select all button handler."""
-    logging.info('User select collect from all aggregators')
-
-    query = update.callback_query
-    await query.answer()
-
-    await query.edit_message_text(
-        'Функция в разработке...',
-        reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
-    )
-    return END_ROUTES
 
 
 async def recieve_keywords(
@@ -202,7 +184,6 @@ def create_conversation_handler() -> ConversationHandler:
         states={
             START_ROUTES: [
                 CallbackQueryHandler(collect_from_hh, pattern=HH_BUTTON),
-                CallbackQueryHandler(collect_all, pattern=ALL_BUTTON),
                 MessageHandler(
                     filters.TEXT & ~(filters.COMMAND), recieve_keywords
                 ),
