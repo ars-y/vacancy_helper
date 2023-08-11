@@ -1,9 +1,9 @@
-import aiohttp
 import asyncio
 
 from .db import VIDStorage
 from .exceptions import URLValueException
 from .processors import TextProcessor
+from .utils import make_request
 
 
 class BaseVacancyCollector:
@@ -31,26 +31,17 @@ class BaseVacancyCollector:
     async def _get_response_data(
         self,
         urls: list,
-        delay: float | int
+        delay: float | int = 0
     ) -> list:
         """Create tasks with delay to make requests."""
         tasks: list = []
         for url in urls:
             tasks.append(
-                asyncio.create_task(self._make_request(url))
+                asyncio.create_task(make_request(url))
             )
             await asyncio.sleep(delay)
 
         return await asyncio.gather(*tasks)
-
-    async def _make_request(self, url: str) -> list:
-        """
-        Making async request with session and url.
-        Rerutn decodes JSON response.
-        """
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                return await response.json()
 
     def _sift_vacancies(self, vacancies: list) -> list:
         """Sift vacancies to leave new ones. New vacancies save in database."""

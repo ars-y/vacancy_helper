@@ -57,10 +57,7 @@ class VacancyHHCollector(BaseVacancyCollector):
         If response contains more than one page,
         then make async requests for remaining pages.
         """
-
-        dataset: list = await asyncio.gather(
-            asyncio.create_task(self._make_request(url))
-        )
+        dataset: list = await self._get_response_data([url])
 
         data: dict = dict(*dataset)
 
