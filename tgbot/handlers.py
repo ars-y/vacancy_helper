@@ -24,12 +24,7 @@ from .constants import (
     TYPING_AREA,
     TYPING_KEYWORDS,
 )
-from .keyboards import (
-    next_skip_back,
-    move_to_keyboard,
-    select_keyboard,
-    url_keyboard
-)
+from .keyboards import build_keyboard, url_keyboard
 from .utils import format_message
 from vacscoll.workers import get_areas, get_vacs, remove_unrecieved
 
@@ -41,7 +36,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     """Start bot with inline keyboard."""
     await update.message.reply_text(
         'Выберите источник вакансий',
-        reply_markup=select_keyboard(),
+        reply_markup=build_keyboard([('Подбор с hh.ru', HH_BUTTON)])
     )
 
     return TYPING_KEYWORDS
@@ -59,7 +54,7 @@ async def menu(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
     await query.edit_message_text(
         'Выберите источник вакансий',
-        reply_markup=select_keyboard(),
+        reply_markup=build_keyboard([('Подбор с hh.ru', HH_BUTTON)])
     )
 
     return TYPING_KEYWORDS
@@ -70,16 +65,17 @@ async def collect_from_hh(
     context: ContextTypes.DEFAULT_TYPE
 ) -> int:
     """Select hh button handler."""
-    logging.info('User select collect from api.hh.ru')
+    logging.info('The user is in the API HH block ')
 
     query = update.callback_query
     await query.answer()
 
-    context.user_data['src_name'] = query.data
+    if 'src_name' not in context.user_data:
+        context.user_data['src_name'] = query.data
 
     await query.edit_message_text(
         'Перечислите ключевые слова для поиска',
-        reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
+        reply_markup=build_keyboard([('Назад', BACK_BUTTON)])
     )
 
     return TYPING_KEYWORDS
@@ -93,28 +89,17 @@ async def keywords_prompt(
     Message handler recieve keywords from user input
     to get vacancies from aggregator API.
     """
-    logging.info('User input keywords')
+    logging.info('User enters keywords')
     keywords = update.message.text
     context.user_data['keywords'] = keywords
 
+    buttons: list = [
+        ('Искать по России', SKIP_BUTTON),
+        ('Назад', BACK_BUTTON),
+    ]
     await update.message.reply_text(
-        'Указать город?',
-        reply_markup=next_skip_back('Далее', 'Пропустить', 'Назад')
-    )
-
-    return TYPING_AREA
-
-
-async def location_request(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
-) -> int:
-    """Sending location request to user."""
-    await update.callback_query.answer()
-
-    await update.callback_query.edit_message_text(
-        'Введите название города или области',
-        reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
+        'Укажите город или область',
+        reply_markup=build_keyboard(buttons)
     )
 
     return TYPING_AREA
@@ -125,27 +110,44 @@ async def location_prompt(
     context: ContextTypes.DEFAULT_TYPE
 ) -> int:
     """Getting location entered from user."""
-    logging.info('User entered location')
+    logging.info('User enters location')
     location = update.message.text
 
     src_name = context.user_data['src_name']
+    logging.info('Checking entered location')
     area_id = await get_areas(src_name, location)
 
     if not area_id:
         logging.info('Entered location not found')
+        buttons: list = [
+            ('Искать по России', SKIP_BUTTON),
+            ('Назад', BACK_BUTTON),
+        ]
+        text_message: str = (
+            'Такого города или области не существует.\n'
+            'Попробуйте указать ещё раз'
+        )
         await update.message.reply_text(
-            'Введенного города не существует',
-            reply_markup=next_skip_back(
-                'Ввести ещё раз', 'Пропустить', 'Назад'
-            )
+            text_message,
+            reply_markup=build_keyboard(buttons)
         )
 
         return TYPING_AREA
 
+    logging.info('Location confirmed')
+    buttons: list = [
+        ('Найти', FIND_BUTTON),
+        ('Назад', BACK_BUTTON),
+    ]
     context.user_data['area'] = area_id
+    keywords = context.user_data['keywords']
+    text_message: str = (
+        f'Поиск по ключевыми словам: {keywords}\n'
+        f'Локация: {location.capitalize()}'
+    )
     await update.message.reply_text(
-        'Начать поиск вакансий',
-        reply_markup=move_to_keyboard('Найти', FIND_BUTTON)
+        text_message,
+        reply_markup=build_keyboard(buttons)
     )
 
     return DELIVERY_VACS
@@ -160,9 +162,18 @@ async def skip_location(
     query = update.callback_query
     await query.answer()
 
+    buttons: list = [
+        ('Найти', FIND_BUTTON),
+        ('Назад', BACK_BUTTON),
+    ]
+    keywords = context.user_data['keywords']
+    text_message: str = (
+        f'Поиск по ключевыми словам: {keywords}\n'
+        f'Локация: Россия'
+    )
     await query.edit_message_text(
-        'Начать поиск вакансий',
-        reply_markup=move_to_keyboard('Найти', FIND_BUTTON)
+        text_message,
+        reply_markup=build_keyboard(buttons)
     )
     return DELIVERY_VACS
 
@@ -192,7 +203,7 @@ async def recieve_vacancies(
         logging.info('Not found vacancies')
         await query.edit_message_text(
             'По вашему запросу вакансий не найдено',
-            reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
+            reply_markup=build_keyboard([('В начало', BACK_BUTTON)])
         )
 
         return END_ROUTES
@@ -205,8 +216,8 @@ async def recieve_vacancies(
 
     await query.edit_message_text(
         vacs_info_message,
-        reply_markup=move_to_keyboard(
-            f'Показать {total_vacs} вакансии', NEXT_BUTTON
+        reply_markup=build_keyboard(
+            [(f'Показать {total_vacs} вакансии', NEXT_BUTTON)]
         )
     )
 
@@ -229,7 +240,7 @@ async def retrieve_vacancies(
         vacancy = vacs_chunk.pop()
         await query.message.reply_text(
             format_message(vacancy),
-            reply_markup=url_keyboard(vacancy.url)
+            reply_markup=url_keyboard('Подробнее', vacancy.url)
         )
 
     if not vacancies:
@@ -237,7 +248,7 @@ async def retrieve_vacancies(
         del context.user_data['vacs']
         await query.message.reply_text(
             'Больше вакансий нет',
-            reply_markup=move_to_keyboard('Назад', BACK_BUTTON)
+            reply_markup=build_keyboard([('В начало', BACK_BUTTON)])
         )
 
         return END_ROUTES
@@ -246,7 +257,7 @@ async def retrieve_vacancies(
     total_vacs: int = CHUNK_SIZE if CHUNK_SIZE < vsize else vsize
     await query.message.reply_text(
         f'Показать ещё {total_vacs} вакансии',
-        reply_markup=move_to_keyboard('Далее', NEXT_BUTTON)
+        reply_markup=build_keyboard([('Далее', NEXT_BUTTON)])
     )
 
     return DELIVERY_VACS
@@ -274,7 +285,6 @@ def create_conversation_handler() -> ConversationHandler:
         entry_points=[CommandHandler('start', start)],
         states={
             SELECT_SRC: [
-                CallbackQueryHandler(collect_from_hh, pattern=HH_BUTTON),
                 CallbackQueryHandler(menu, pattern=BACK_BUTTON),
             ],
             TYPING_KEYWORDS: [
@@ -289,12 +299,12 @@ def create_conversation_handler() -> ConversationHandler:
                     filters.TEXT & ~(filters.COMMAND), location_prompt
                 ),
                 CallbackQueryHandler(skip_location, pattern=SKIP_BUTTON),
-                CallbackQueryHandler(location_request, pattern=NEXT_BUTTON),
-                CallbackQueryHandler(menu, pattern=BACK_BUTTON),
+                CallbackQueryHandler(collect_from_hh, pattern=BACK_BUTTON),
             ],
             DELIVERY_VACS: [
                 CallbackQueryHandler(recieve_vacancies, pattern=FIND_BUTTON),
                 CallbackQueryHandler(retrieve_vacancies, pattern=NEXT_BUTTON),
+                CallbackQueryHandler(collect_from_hh, pattern=BACK_BUTTON),
             ],
             END_ROUTES: [
                 CallbackQueryHandler(menu, pattern=BACK_BUTTON),
