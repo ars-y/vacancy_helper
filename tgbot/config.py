@@ -12,7 +12,7 @@ TELEGRAM_TOKEN: str | None = os.getenv('TELEGRAM_TOKEN')
 def setup_logging() -> None:
     logging.basicConfig(
         level=logging.INFO,
-        format='[%(levelname)s]:[%(asctime)s] - %(message)s ',
-        datefmt='%H:%M:%S'
+        format='%(levelname)-8s: %(asctime)s : %(message)s ',
+        datefmt='%Y-%m-%d %H:%M:%S'
     )
     logging.getLogger('httpx').setLevel(logging.WARNING)
